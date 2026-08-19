@@ -1,0 +1,9 @@
+openai
+requests
+python-dotenv
+pillow
+apscheduleropenai
+requests
+python-dotenv
+pillow
+apscheduler
