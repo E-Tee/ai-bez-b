@@ -7,11 +7,10 @@ DB_DIR = "data"
 DB_PATH = os.path.join(DB_DIR, "budget.db")
 
 # ЦЕНЫ за 1 млн токенов: (вход, выход) в рублях.
-# ЗАПОЛНИ из тарифов Serverspace! Пока нули — считаем только токены.
 PRICES = {
-    "deepseek-v4-flash": (0, 0),
-    "gpt-5.4-mini": (0, 0),
-    "deepseek-v3.2": (0, 0),
+    "deepseek/deepseek-v4-flash": (15.75, 31.5),   # (вход, выход) ₽ за 1М токенов
+    "deepseek/deepseek-v3.2": (50, 70),
+    "gpt-5.4-mini": (140, 840)
 }
 
 
@@ -26,9 +25,14 @@ def _conn():
         day TEXT, model TEXT, tok_in INT, tok_out INT, rub REAL)""")
     return c
 
+def _price(model):
+    """Ищет цену и по полному имени, и по короткому (deepseek/x -> x)."""
+    if model in PRICES:
+        return PRICES[model]
+    return PRICES.get(model.split("/")[-1], (0, 0))
 
 def spend(model, tok_in, tok_out):
-    rub_in, rub_out = PRICES.get(model, (0, 0))
+    rub_in, rub_out = _price(model)
     rub = tok_in / 1_000_000 * rub_in + tok_out / 1_000_000 * rub_out
     c = _conn()
     c.execute("INSERT INTO spend VALUES (?,?,?,?,?)",

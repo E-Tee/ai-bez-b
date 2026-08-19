@@ -28,6 +28,7 @@ def ask(role, prompt, system=""):
                 ],
             )
             spend(model, r.usage.prompt_tokens, r.usage.completion_tokens)
+            print(f"[llm] ответил: {model}")
             return r.choices[0].message.content
         except Exception as e:
             print(f"[llm] {model} не вывез: {e}")
