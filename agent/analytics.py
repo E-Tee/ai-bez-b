@@ -1,57 +1,57 @@
-"""Аналитика: копим посты и снимаем метрики ВК."""
+"""Аналитика: посты и метрики в data/posts.json."""
+import json
 import os
-import sqlite3
-from datetime import date
+from datetime import date, timedelta
 from agent.vk import vk
 
-DB = os.path.join("data", "analytics.db")
+PATH = os.path.join("data", "posts.json")
 
 
-def _conn():
+def _load():
+    if os.path.exists(PATH):
+        with open(PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
+def _save(d):
     os.makedirs("data", exist_ok=True)
-    c = sqlite3.connect(DB)
-    c.execute("""CREATE TABLE IF NOT EXISTS posts(
-        post_id INT PRIMARY KEY, day TEXT, headline TEXT,
-        views INT, likes INT, comments INT, shares INT)""")
-    return c
+    with open(PATH, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False, indent=2)
 
 
 def save_post(post_id, headline):
-    c = _conn()
-    c.execute("INSERT OR IGNORE INTO posts VALUES (?,?,?,?,0,0,0)",
-              (post_id, str(date.today()), headline[:80]))
-    c.commit()
-    c.close()
+    d = _load()
+    d[str(post_id)] = {"day": str(date.today()), "headline": headline[:80],
+                       "views": 0, "likes": 0, "comments": 0, "shares": 0}
+    _save(d)
 
 
 def refresh():
-    """Обновить метрики по всем постам."""
     gid = int(os.getenv("VK_GROUP_ID"))
-    c = _conn()
-    for (pid,) in c.execute("SELECT post_id FROM posts").fetchall():
+    d = _load()
+    for pid, rec in d.items():
         try:
             res = vk("stats.get", post_ids=f"-{gid}_{pid}")
         except Exception as e:
-            print("[analytics] ошибка:", e)
+            print("[analytics]", e)
             continue
         if not res:
             continue
         s = res[0]
         fb = s.get("feedback", {}) or {}
-        c.execute("UPDATE posts SET views=?, likes=?, comments=?, shares=? WHERE post_id=?",
-                  ((s.get("visitors", {}) or {}).get("views", 0),
-                   fb.get("likes", 0), fb.get("comments", 0),
-                   fb.get("shares", 0), pid))
-    c.commit()
-    c.close()
+        rec.update(views=(s.get("visitors", {}) or {}).get("views", 0),
+                   likes=fb.get("likes", 0), comments=fb.get("comments", 0),
+                   shares=fb.get("shares", 0))
+    _save(d)
 
 
 def week_report():
-    c = _conn()
-    rows = c.execute("""SELECT headline, views, likes, comments, shares
-        FROM posts WHERE day >= date('now','-7 days')
-        ORDER BY likes DESC""").fetchall()
-    c.close()
+    d = _load()
+    week = str(date.today() - timedelta(days=7))
+    rows = [(r["headline"], r["views"], r["likes"], r["comments"], r["shares"])
+            for r in d.values() if r["day"] >= week]
+    rows.sort(key=lambda x: -x[2])
     if not rows:
         return "На неделе тишина: агент копил силы."
     lines = ["Посты за неделю:"]

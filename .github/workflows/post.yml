@@ -1,0 +1,31 @@
+name: post
+on:
+  schedule:
+    - cron: "0 10 * * *"
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    env:
+      SERVERSPACE_BASE_URL: ${{ secrets.SERVERSPACE_BASE_URL }}
+      SERVERSPACE_API_KEY: ${{ secrets.SERVERSPACE_API_KEY }}
+      VK_TOKEN: ${{ secrets.VK_TOKEN }}
+      VK_GROUP_ID: ${{ secrets.VK_GROUP_ID }}
+      DAILY_BUDGET_RUB: "100"
+      ATTACH_IMAGES: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python run_post.py
+      - name: commit data
+        run: |
+          git config user.name "ai-agent"
+          git config user.email "agent@ai-bez-b.local"
+          git add data/posts.json
+          git diff --staged --quiet || (git commit -m "agent: новый пост в базе" && git push)
