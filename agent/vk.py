@@ -18,11 +18,16 @@ def publish(text, image_path=None):
     gid = int(os.getenv("VK_GROUP_ID"))
     att = ""
     if image_path:
+        print("[vk] файл весит:", os.path.getsize(image_path))
         srv = vk("photos.getWallUploadServer", group_id=gid)
         with open(image_path, "rb") as f:
             up = requests.post(srv["upload_url"], files={"photo": f}).json()
-        saved = vk("photos.saveWallPhotos", group_id=gid,
+        saved = vk("photos.saveWallPhoto", group_id=gid,
                    photo=up["photo"], server=up["server"], hash=up["hash"])[0]
-        att = f"photo{saved['owner_id']}_{saved['id']}"
+        print("[vk] ответ загрузки:", up)
+        saved = vk("photos.saveMessagesPhoto",
+                   photo=up["photo"], server=up["server"], hash=up["hash"])[0]
+        key = saved.get("access_key")
+        att = f"photo{saved['owner_id']}_{saved['id']}" + (f"_{key}" if key else "")
     return vk("wall.post", owner_id=-gid, from_group=1,
               message=text, attachments=att)
