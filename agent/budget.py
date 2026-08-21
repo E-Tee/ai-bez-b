@@ -1,7 +1,11 @@
 """Бюджет-гард: считает токены/рубли и стопает при дневном лимите."""
 import os
+import logging
 import sqlite3
 from datetime import date
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 DB_DIR = "data"
 DB_PATH = os.path.join(DB_DIR, "budget.db")
@@ -19,10 +23,13 @@ class BudgetError(Exception):
 
 
 def _conn():
+    """Создание подключения к БД с индексом для оптимизации."""
     os.makedirs(DB_DIR, exist_ok=True)
     c = sqlite3.connect(DB_PATH)
     c.execute("""CREATE TABLE IF NOT EXISTS spend(
         day TEXT, model TEXT, tok_in INT, tok_out INT, rub REAL)""")
+    # Создаём индекс для ускорения запросов по дню
+    c.execute("CREATE INDEX IF NOT EXISTS idx_spend_day ON spend(day)")
     return c
 
 def _price(model):
@@ -32,6 +39,7 @@ def _price(model):
     return PRICES.get(model.split("/")[-1], (0, 0))
 
 def spend(model, tok_in, tok_out):
+    """Запись расходов и проверка лимита с уведомлением о 80%."""
     rub_in, rub_out = _price(model)
     rub = tok_in / 1_000_000 * rub_in + tok_out / 1_000_000 * rub_out
     c = _conn()
@@ -40,8 +48,14 @@ def spend(model, tok_in, tok_out):
     c.commit()
     total = c.execute("SELECT SUM(rub) FROM spend WHERE day=?",
                       (str(date.today()),)).fetchone()[0] or 0
-    c.close()
     limit = float(os.getenv("DAILY_BUDGET_RUB", 100))
+    
+    # Уведомление о приближении к лимиту (80%)
+    if total > limit * 0.8 and total <= limit:
+        logger.warning(f"ВНИМАНИЕ: использовано {total:.2f}₽ из {limit}₽ (80%+)")
+    
+    c.close()
+    
     if total > limit:
         raise BudgetError(f"Лимит {limit}₽/день пробит: уже {total:.2f}₽")
     return rub
