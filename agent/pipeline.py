@@ -26,12 +26,24 @@ def run(do_publish=True):
                   f"Проверь пост для новичков: без мата, без обещаний дохода, приветствие должно начинаться с ИИ агент на связи"
                   f"без терминов без объяснения. Ответ: OK или FIX: причина.\n\n{text}",
                   "Ты строгий редактор паблика для новичков.")
-    print("[critic]", verdict)
-    if verdict.strip().upper().startswith("FIX"):
-        text = ask("writer", f"Перепиши с учётом: {verdict}. Было: {text}", WRITER_SYS)
+    logger.info(f"[critic] {verdict}")
+    
+    # Более гибкий парсинг вердикта
+    verdict_upper = verdict.strip().upper()
+    verdict_lower = verdict.lower()
+    if verdict_upper.startswith("FIX") or "fix" in verdict_lower:
+        # Извлекаем причину после FIX: или просто используем весь текст
+        reason = verdict.split(":", 1)[1].strip() if ":" in verdict else verdict
+        text = ask("writer", f"Перепиши с учётом: {reason}. Было: {text}", WRITER_SYS)
 
     # 4. Картинка
-        attach = os.getenv("ATTACH_IMAGES", "false").lower() == "true"
+    attach = os.getenv("ATTACH_IMAGES", "false").lower() == "true"
+    path = None
+    if attach:
+        from agent.image import get_image
+        prompt = f"иллюстрация для поста про ИИ: {plan}"
+        path = get_image(prompt, text)
+    
     if do_publish:
         res = publish(text, path if attach else None)
         print("[vk] опубликовано:", res)
