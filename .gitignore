@@ -1,42 +1,31 @@
-```gitignore
-# Compiled Python files
+# Python
 *.pyc
 __pycache__/
-
-# Virtual environments
 venv/
 .venv/
 env/
-
-# Dependencies cache
 .mypy_cache/
 .pytest_cache/
 .coverage
 
 # Logs
 *.log
+logs/
 
-# Environment files
+# Secrets — красная линия
 .env
 .env.local
 *.env.*
 
-# Coverage reports
-coverage/
-htmlcov/
+# Data — бюджет-база остаётся дома!
+data/*
+!data/posts.json
+*.db
 
-# Distribution artifacts
-dist/
-build/
-*.egg-info/
-
-# Editors
+# Editors / OS
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS generated files
 .DS_Store
 Thumbs.db
-```

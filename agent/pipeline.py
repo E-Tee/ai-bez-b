@@ -4,6 +4,11 @@ from agent.llm import ask
 from agent.image import get_image
 from agent.vk import publish
 
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 WRITER_SYS = ("Ты писатель паблика «ИИ просто и без затей». Пиши просто и живо, "
               "без мата, без обещаний дохода, сложные слова объясняй метафорами. "
               "5-10 предложений.")
