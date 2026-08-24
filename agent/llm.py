@@ -26,8 +26,9 @@ client = OpenAI(
 # подставь имена ровно как в их доке.
 ROLES = {
     "planner": ["deepseek/deepseek-v4-flash", "gpt-5.4-mini"],
-    "writer": ["deepseek/deepseek-v3.2", "deepseek/deepseek-v4-flash"],
+    "writer": ["moonshotai/kimi-k2.7-code", "deepseek/deepseek-v4-flash"],
     "critic": ["deepseek/deepseek-v4-flash", "gpt-5.4-mini"],
+    "editor": ["deepseek/deepseek-v4-flash", "gpt-5.4-mini"],
 }
 
 
