@@ -14,7 +14,7 @@ DB_PATH = os.path.join(DB_DIR, "budget.db")
 PRICES = {
     "deepseek/deepseek-v4-flash": (15.75, 31.5),   # (вход, выход) ₽ за 1М токенов
     "moonshotai/kimi-k2.7-code": (78, 385),
-    "gpt-5.4-mini": (140, 840)
+    "qwen/qwen3-next-80b-a3b-thinking": (60, 180)
 }
 
 
@@ -68,3 +68,19 @@ def today_report():
         (str(date.today()),)).fetchone()
     c.close()
     return f"токенов: {t[0] or 0}, рублей: {t[1] or 0:.2f}"
+
+def spend_fixed(model, rub):
+    """Фиксированная трата в рублях (картинки) — в тот же журнал и под тот же лимит."""
+    c = _conn()
+    c.execute("INSERT INTO spend VALUES (?,?,?,?,?)",
+              (str(date.today()), model, 0, 0, rub))
+    c.commit()
+    total = c.execute("SELECT SUM(rub) FROM spend WHERE day=?",
+                      (str(date.today()),)).fetchone()[0] or 0
+    c.close()
+    limit = float(os.getenv("DAILY_BUDGET_RUB", 100))
+    if total > limit * 0.8:
+        logger.warning(f"ВНИМАНИЕ: использовано {total:.2f}₽ из {limit}₽ (80%+)")
+    if total > limit:
+        raise BudgetError(f"Лимит {limit}₽/день пробит: уже {total:.2f}₽")
+    return rub
