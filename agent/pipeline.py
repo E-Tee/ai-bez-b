@@ -5,7 +5,7 @@ import logging
 from datetime import date
 
 from agent.llm import ask
-from agent.image import get_image
+from agent.image import get_image, BRAND_STYLE
 from agent.vk import publish
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -90,9 +90,13 @@ def run(do_publish=True):
 
     text = ask("editor", f"Отредактируй текст, сохранив смысл:\n\n{text}", EDITOR_SYS)
 
-    img_prompt = ask("planner",
-                     f"Short English prompt for flat vector illustration, no text, "
-                     f"no letters. Post topic: {topic['topic']}")
+    subject = ask("planner",
+                  f"Придумай ОДИН простой зрительный образ для темы: {topic['topic']}. "
+                  f"Ответь короткой фразой на английском: только объект или сцена, "
+                  f"без слов про стиль и фон. ",
+                  "Ты подбираешь визуальную метафору для поста.")
+    img_prompt = f"{subject.strip()}, {BRAND_STYLE}"
+    logger.info(f"[image] промпт: {img_prompt}")
     path = get_image(img_prompt, text)
 
     if do_publish:

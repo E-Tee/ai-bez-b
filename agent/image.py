@@ -13,18 +13,21 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # ── Бренд ─────────────────────────────────────────────────────────────
-BRAND_BG_URL = ("https://sun9-17.vkuserphoto.ru/s/v1/ig2/"
-                "7Yh97cEEK_YsjuWEFhdo29W3vPpPjgg-ZGRljO7bEYCyMGOVrp0U5iFhrH6lvmwo0xf7mo8nbvOzV7f97_"
-                "wZE553.jpg?quality=95&cs=1920x0")
-BRAND_BG_CACHE = os.path.join("data", "brand_bg.jpg")
+# ВСТАВЬ СВОЙ RAW-АДРЕС: GitHub -> файл в ветке -> кнопка Raw -> скопировать URL
+BRAND_BG_URL = "https://raw.githubusercontent.com/E-Tee/ai-bez-b/Fix-post-img/template/brand_bg.png"
+BRAND_BG_LOCAL = os.path.join("template", "brand_bg.png")
+BRAND_BG_CACHE = os.path.join("data", "brand_bg.png")
 BRAND_NAME = "ИИ просто и без затей"
-NAVY = (24, 38, 63)      # последний запасной фон, если даже ссылка умрёт
-ACCENT = (255, 122, 0)   # оранжевый для подписи
+NAVY = (24, 38, 63)      # последний запасной фон
+ACCENT = (255, 122, 0)
+BRAND_STYLE = ("dark teal-navy background, glowing neon cyan circuit board traces "
+               "along the bottom edge, minimal flat vector tech aesthetic, "
+               "no text, no letters")
 
 # ── GPTunneL (фотоцех) ────────────────────────────────────────────────
 GT_MEDIA = "https://gptunnel.ru/api/v2/media"
 GT_MODEL = "recraftv4_1"
-GT_MAX_PRICE = 10     # потолок ₽ за картинку
+GT_MAX_PRICE = 10
 GT_POLL_SEC = 5
 GT_MAX_WAIT = 180
 
@@ -57,10 +60,9 @@ def _gptunnel(prompt, path):
 
     body = {
         "model": GT_MODEL,
-        "prompt": prompt + (". Keep the same art style, color palette and mood "
-                            "as the reference image, but change the subject"),
-        "params": {"aspect_ratio": "16:9"},
-        "inputs": {"image": [BRAND_BG_URL.split("?")[0]]},  # фирменный фон как образец
+        "prompt": prompt + ". Keep the background and overall look of the reference image",
+        "params": {"aspect_ratio": "16:9", "strength": 0.6},
+        "inputs": {"image": [BRAND_BG_URL]},
     }
 
     # 1. Цена ДО заказа
@@ -117,10 +119,11 @@ def _pollinations(prompt, path):
 
 
 def _get_brand_bg():
-    """Фирменный фон: из кэша, иначе скачать и положить в кэш."""
-    if os.path.exists(BRAND_BG_CACHE):
-        logger.info("[image] брендовый фон из кэша")
-        return Image.open(BRAND_BG_CACHE)
+    """Фон: файл из репо -> кэш -> скачать. Без сети карточка всё равно брендовая."""
+    for p in (BRAND_BG_LOCAL, BRAND_BG_CACHE):
+        if os.path.exists(p):
+            logger.info(f"[image] брендовый фон из файла: {p}")
+            return Image.open(p)
     try:
         r = requests.get(BRAND_BG_URL, timeout=30)
         r.raise_for_status()
