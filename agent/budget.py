@@ -14,7 +14,7 @@ DB_PATH = os.path.join(DB_DIR, "budget.db")
 PRICES = {
     "deepseek/deepseek-v4-flash": (15.75, 31.5),   # (вход, выход) ₽ за 1М токенов
     "moonshotai/kimi-k2.7-code": (78, 385),
-    "gpt-5.4-mini": (140, 840)
+    "qwen/qwen3-next-80b-a3b-thinking": (60, 180)
 }
 
 

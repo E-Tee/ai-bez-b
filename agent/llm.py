@@ -25,10 +25,10 @@ client = OpenAI(
 # Точные ID моделей проверь в панели! Если "model not found" —
 # подставь имена ровно как в их доке.
 ROLES = {
-    "planner": ["openai/gpt-5.4-mini", "deepseek/deepseek-v4-flash"],
+    "planner": ["qwen/qwen3-next-80b-a3b-thinking", "deepseek/deepseek-v4-flash"],
     "writer": ["moonshotai/kimi-k2.7-code", "deepseek/deepseek-v4-flash"],
-    "critic": ["openai/gpt-5.4-mini", "deepseek/deepseek-v4-flash"],
-    "editor": ["openai/gpt-5.4-mini","deepseek/deepseek-v4-flash"],
+    "critic": ["deepseek/deepseek-v4-flash"],
+    "editor": ["deepseek/deepseek-v4-flash", "qwen/qwen3-next-80b-a3b-thinking"],
 }
 
 
