@@ -105,7 +105,11 @@ def publish(text, image_path=None):
         logger.info(f"[vk] файл весит: {os.path.getsize(image_path)} байт")
         utoken = os.getenv("VK_USER_TOKEN")
         if utoken:
-            att = _upload_wall(image_path, gid, utoken)
+            try:
+                att = _upload_wall(image_path, gid, utoken)
+            except Exception as e:
+                logger.warning(f"[vk] wall-путь не пустил ({e}), иду в messages")
+                att = _upload_messages(image_path, gid)
         else:
             att = _upload_messages(image_path, gid)
     return vk("wall.post", owner_id=-gid, from_group=1,
