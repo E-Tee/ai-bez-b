@@ -3,6 +3,8 @@ import json
 import os
 import logging
 from datetime import date
+from dotenv import load_dotenv
+load_dotenv()
 
 from agent.llm import ask
 from agent.image import get_image
@@ -90,10 +92,13 @@ def run(do_publish=True):
 
     text = ask("editor", f"Отредактируй текст, сохранив смысл:\n\n{text}", EDITOR_SYS)
 
-    img_prompt = ask("planner",
-                     f"Short English prompt for flat vector illustration, no text, "
-                     f"no letters. Post topic: {topic['topic']}")
-    path = get_image(img_prompt, text)
+    attach = os.getenv("ATTACH_IMAGES", "true").strip().lower() == "true"
+    path = None
+    if attach:
+        img_prompt = ask("planner",
+                         f"Short English prompt for flat vector illustration, no text, "
+                         f"no letters. Post topic: {topic['topic']}")
+        path = get_image(img_prompt, text)
 
     if do_publish:
         res = publish(text, path)

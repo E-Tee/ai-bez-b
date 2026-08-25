@@ -61,6 +61,33 @@ def spend(model, tok_in, tok_out):
     return rub
 
 
+def spend_image(model, rub=None):
+    """Фиксированная стоимость генерации изображения (токены = 0).
+
+    Цена берётся из переменной IMAGE_PRICE_RUB (по умолчанию 2₽),
+    либо передаётся явно. Пишется в ту же таблицу spend, поэтому
+    действует тот же дневной лимит DAILY_BUDGET_RUB.
+    """
+    if rub is None:
+        rub = float(os.getenv("IMAGE_PRICE_RUB", 2.0))
+    c = _conn()
+    c.execute("INSERT INTO spend VALUES (?,?,?,?,?)",
+              (str(date.today()), model, 0, 0, rub))
+    c.commit()
+    total = c.execute("SELECT SUM(rub) FROM spend WHERE day=?",
+                      (str(date.today()),)).fetchone()[0] or 0
+    limit = float(os.getenv("DAILY_BUDGET_RUB", 100))
+
+    if total > limit * 0.8 and total <= limit:
+        logger.warning(f"ВНИМАНИЕ: использовано {total:.2f}₽ из {limit}₽ (80%+)")
+
+    c.close()
+
+    if total > limit:
+        raise BudgetError(f"Лимит {limit}₽/день пробит: уже {total:.2f}₽")
+    return rub
+
+
 def today_report():
     c = _conn()
     t = c.execute(

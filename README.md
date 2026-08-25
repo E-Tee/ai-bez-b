@@ -29,7 +29,11 @@
 
 Опциональные:
 - `DAILY_BUDGET_RUB` — дневной лимит расходов на LLM (по умолчанию 100₽)
-- `ATTACH_IMAGES` — прикреплять изображения к постам (true/false, по умолчанию false)
+- `ATTACH_IMAGES` — прикреплять изображения к постам (true/false, по умолчанию true)
+- `IMAGE_PROVIDER` — провайдер генерации картинок: `gptunnel` (по умолчанию), `pollinations`, `template`
+- `IMAGE_MODELS` — ID моделей изображений gptunnel через запятую
+- `IMAGE_PRICE_RUB` — ориентировочная цена одной генерации (₽), учитывается в дневном бюджете
+- `IMAGE_SIZE` — размер изображения (по умолчанию 1024x1024)
 
 ## Основные команды
 - `python main.py` — создание и публикация поста
@@ -37,6 +41,32 @@
 - `python run_stats.py` — ручное обновление метрик
 - `python run_report.py` — публикация недельного отчёта
 - `python check_api.py` — проверка доступности LLM API
+
+## Картинки к постам
+Изображение генерируется для каждого поста через gptunnel (тот же ключ и base URL, что и для LLM — https://docs.gptunnel.ru/). При ошибке автоматически откатываемся на бесплатный Pollinations, а затем на Pillow-открытку (0₽).
+
+Цепочка провайдеров:
+1. **gptunnel** — OpenAI-совместимый endpoint `/v1/images/generations`, высокое качество, расходует баланс.
+2. **Pollinations** — бесплатный fallback.
+3. **Pillow** — всегда работает, 0₽.
+
+### Как проверить доступные модели и вписать ID
+```bash
+python check_api.py
+```
+Скрипт выведет список моделей gptunnel и отдельно — те, что похожи на генерацию изображений. Точные ID пропишите в `.env` через `IMAGE_MODELS` (через запятую), например:
+```
+IMAGE_MODELS=gpt-image-1.5,gpt-image-1,gpt-image-2
+```
+
+### Примеры ID моделей (уточняйте в панели провайдера)
+- GPT Image: `gpt-image-1.5`, `gpt-image-1`, `gpt-image-2`, `gpt-image-1-mini`
+- FLUX: `flux.2-pro`, `flux.1.1-pro`, `flux.1.1-ultra`
+- Прочие: `seedream-4`, `google-imagen-3`, `nano-banana`
+
+Стоимость каждой генерации учитывается в дневном бюджете по `IMAGE_PRICE_RUB` (по умолчанию 2₽) — это часть общего лимита `DAILY_BUDGET_RUB`.
+
+Отключить платную генерацию можно так: `IMAGE_PROVIDER=pollinations` (или `template` для простой открытки).
 
 ## Правила проекта
 Бюджет ≤ 3000₽/мес. Ключи только в .env. Никакой магии — только логи.
